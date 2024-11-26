@@ -88,6 +88,7 @@ export default {
                 // 檢查用戶行是否為空
                 if (userLineTrimmed === '') {
                     userLineIndex++; // 增加用戶行索引
+                    originalLineIndex++; // 同時增加原稿行索引
                     return; // 跳過當前行，檢查下一行
                 }
 
@@ -111,6 +112,9 @@ export default {
             if (!hasUserInput) {
                 this.errors.push('用戶未輸入任何內容，請填寫程式碼。');
                 this.score = 0; // 如果沒有輸入，設置為 0 分
+            } else if (userLines.length < originalLines.length) { // 檢查用戶行數是否小於原稿行數
+                this.errors.push('用戶輸入的行數少於原稿行數，請檢查。');
+                this.score = 0; // 如果行數不夠，設置為 0 分
             }
 
             // 更新結果信息

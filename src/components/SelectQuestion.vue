@@ -3,14 +3,14 @@
         <div id="announcement" class="announcement">
             <p>警告！！！<br>本網頁目前只僅提供電腦版本解析度優化，如有不便敬請見諒！</p>
         </div>
-        <img class="calligraphy" src="/生.png" alt="生" />
-        <img class="calligraphy" src="/涯.png" alt="涯" />
-        <img class="calligraphy" src="/現.png" alt="現" />
-        <img class="calligraphy" src="/役.png" alt="役" />
+        <img class="calligraphy 生" src="/生.png" alt="生" />
+        <img class="calligraphy 涯" src="/涯.png" alt="涯" />
+        <img class="calligraphy 現" src="/現.png" alt="現" />
+        <img class="calligraphy 役" src="/役.png" alt="役" />
         <img class="long-word" src="/技術課.png" alt="技術課" />
         <img class="stamp" src="/印.png" alt="印章" />
         <video autoplay loop muted class="background-video">
-            <source src="../assets/BG.mp4" type="video/mp4" />
+            <source src="../assets/E.mp4" type="video/mp4" />
             您的瀏覽器不支持視頻標籤。
         </video>
         <figure class="snip1295 po1"><img src="/dog.jpg"
@@ -522,7 +522,7 @@ button:active {
 
 .po2 {
     position: absolute;
-    top: 33svh;
+    top: 34svh;
     right: 25svw;
 }
 
@@ -589,14 +589,55 @@ button:active {
 }
 
 .calligraphy {
-    position: relative;
+    max-width: 10svw;
+    max-height: 10svw;
+    width: 100%;
+    height: 100%;
+}
+
+.生 {
+    position: absolute;
+    top: 2svh;
+    right: 37svw;
+}
+
+.涯 {
+    position: absolute;
+    top: 13.5svh;
+    right: 25svw;
+}
+
+.現 {
+    position: absolute;
+    bottom: 12svh;
+    right: 37svw;
+}
+
+.役 {
+    position: absolute;
+    bottom: 0;
+    right: 25svw;
 }
 
 .long-word {
-    position: relative;
+    position: absolute;
+    margin-bottom: -1.5svh;
+    margin-right: -5svh;
+    right: 20svw;
+    max-height: 35svh;
+    max-width: 5svw;
+    width: 100%;
+    height: 100%;
 }
 
 .stamp {
-    position: relative;
+    position: absolute;
+    margin-bottom: -14svh;
+    margin-right: -5svh;
+    right: 15svw;
+    max-height: 20svh;
+    max-width: 4svw;
+    width: 100%;
+    height: 100%;
 }
 </style>
