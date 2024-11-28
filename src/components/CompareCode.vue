@@ -1,34 +1,36 @@
 <template>
     <div class="compare-container">
-        <div class="header-container">
-            <h1>花工電子科程式比對程式</h1>
-            <div class="result-display">
-                <p>{{ displayName }}</p>
-                <p>{{ displayDetails }}</p>
+        <div class="containerr">
+            <div class="header-container">
+                <h1>花工電子科程式比對程式</h1>
+                <div class="result-display">
+                    <p>{{ displayName }}</p>
+                    <p>{{ displayDetails }}</p>
+                </div>
             </div>
-        </div>
-        <div class="code-input-section">
-            <div class="code-wrapper">
-                <pre id="user-line-numbers" class="line-numbers"></pre>
-                <textarea v-model="userCode" class="code-input" placeholder="請輸入您的程式碼..."
-                    @input="updateLineNumbers('userCode', 'user-line-numbers')"></textarea>
+            <div class="code-input-section">
+                <div class="code-wrapper">
+                    <pre id="user-line-numbers" class="line-numbers"></pre>
+                    <textarea v-model="userCode" class="code-input" placeholder="請輸入您的程式碼..."
+                        @input="updateLineNumbers('userCode', 'user-line-numbers')"></textarea>
+                </div>
+                <div v-if="resultMessage" class="result-message" v-html="resultMessage"></div>
+                <h2 style="color: #00a8d2;">原稿資料</h2>
+                <div class="code-wrapper">
+                    <pre id="reference-line-numbers" class="line-numbers"></pre>
+                    <textarea v-model="referenceCode" class="code-input" readonly
+                        @input="updateLineNumbers('referenceCode', 'reference-line-numbers')"
+                        @change="updateLineNumbers('referenceCode', 'reference-line-numbers')"></textarea>
+                </div>
+                <button @click="submitCode" class="pushable">
+                    <span class="shadow"></span>
+                    <span class="edge"></span>
+                    <span class="front"> 提交 </span>
+                </button>
+                <p style="color: white;margin-top: 10px;">© 2024 - {{ Year }} 花蓮高工電子科保留所有權利。 屬名：octikcok</p>
             </div>
-            <div v-if="resultMessage" class="result-message" v-html="resultMessage"></div>
-            <h2 style="color: #00a8d2;">原稿資料</h2>
-            <div class="code-wrapper">
-                <pre id="reference-line-numbers" class="line-numbers"></pre>
-                <textarea v-model="referenceCode" class="code-input" readonly
-                    @input="updateLineNumbers('referenceCode', 'reference-line-numbers')"
-                    @change="updateLineNumbers('referenceCode', 'reference-line-numbers')"></textarea>
-            </div>
-            <button @click="submitCode" class="pushable">
-                <span class="shadow"></span>
-                <span class="edge"></span>
-                <span class="front"> 提交 </span>
-            </button>
         </div>
     </div>
-    <div class="footer-copyright">© 2024 - {{ Year }} 花蓮高工電子科保留所有權利。 屬名：octikcok</div>
 </template>
 
 <script>
@@ -59,62 +61,66 @@ export default {
             }
         },
         compareCodes() {
-            const originalLines = this.referenceCode.split('\n');
-            const userLines = this.userCode.split('\n');
+            const originalLines = this.referenceCode.split('\n'); // 原稿行
+            const userLines = this.userCode.split('\n'); // 用戶行
             this.errors = [];
             this.score = 100;
 
             let originalLineIndex = 0; // 用於追蹤原稿行的索引
-            let userLineIndex = 0; // 用於追蹤用戶行的索引
             let hasUserInput = false; // 用於檢查用戶是否有輸入
 
-            userLines.forEach((userLine) => {
+            // 過濾掉原稿和用戶輸入中的空行
+            const filteredOriginalLines = originalLines.filter(line => line.trim() !== '');
+            const filteredUserLines = userLines.filter(line => line.trim() !== '');
+
+            // 檢查用戶行數是否小於原稿行數
+            if (filteredUserLines.length < filteredOriginalLines.length) {
+                this.errors.push('用戶輸入的行數少於原稿行數，請檢查。');
+                this.score = 0; // 如果行數不夠，設置為 0 分
+            }
+
+            filteredUserLines.forEach((userLine, userLineIndex) => {
                 const userLineTrimmed = userLine.trim();
 
-                // 找到下一個非空的原稿行
-                while (originalLineIndex < originalLines.length && originalLines[originalLineIndex].trim() === '') {
-                    originalLineIndex++; // 跳過空行
+                // 忽略空行和註釋
+                if (userLineTrimmed === '' || userLineTrimmed.startsWith('//')) {
+                    return; // 跳過空行和註釋
+                }
+
+                hasUserInput = true; // 標記用戶有輸入
+
+                // 找到下一個非空的原稿行，並忽略註釋
+                while (originalLineIndex < filteredOriginalLines.length) {
+                    const originalLineTrimmed = filteredOriginalLines[originalLineIndex].trim();
+                    if (originalLineTrimmed === '' || originalLineTrimmed.startsWith('//')) {
+                        originalLineIndex++; // 跳過空行和註釋
+                        continue;
+                    }
+                    break; // 找到非空行，退出循環
                 }
 
                 // 如果原稿行已經用完，則報告錯誤
-                if (originalLineIndex >= originalLines.length) {
-                    if (userLineTrimmed !== '') {
-                        this.errors.push(`第 ${userLineIndex + 1} 行錯誤，但原稿行已經用完`); // 記錄錯誤行
-                    }
-                    userLineIndex++; // 增加用戶行索引
+                if (originalLineIndex >= filteredOriginalLines.length) {
+                    this.errors.push(`第 ${userLineIndex + 1} 行錯誤，用戶輸入為<br> "${userLineTrimmed}"，原稿已用完。`);
                     return; // 跳過當前行，檢查下一行
                 }
 
-                // 檢查用戶行是否為空
-                if (userLineTrimmed === '') {
-                    userLineIndex++; // 增加用戶行索引
-                    originalLineIndex++; // 同時增加原稿行索引
-                    return; // 跳過當前行，檢查下一行
-                }
+                const originalLineTrimmed = filteredOriginalLines[originalLineIndex].trim();
 
-                // 標記用戶有輸入
-                hasUserInput = true;
-
-                const originalLineTrimmed = originalLines[originalLineIndex].trim();
-
-                // 比較原稿行和用戶行
+                // 比較原稿行和用戶行，忽略空格
                 if (originalLineTrimmed !== userLineTrimmed) {
-                    this.errors.push(`第 ${userLineIndex + 1} 行錯誤，用戶輸入為 "${userLineTrimmed}"`); // 記錄錯誤行
+                    this.errors.push(`第 ${userLineIndex + 1} 行錯誤，用戶輸入為<br> "${userLineTrimmed}"`); // 記錄錯誤行
                     this.score = 0; // 只要有一個錯誤就設置為 0 分
                 }
 
-                // 增加原稿行索引和用戶行索引
+                // 增加原稿行索引
                 originalLineIndex++;
-                userLineIndex++;
             });
 
             // 檢查用戶是否有輸入
             if (!hasUserInput) {
                 this.errors.push('用戶未輸入任何內容，請填寫程式碼。');
                 this.score = 0; // 如果沒有輸入，設置為 0 分
-            } else if (userLines.length < originalLines.length) { // 檢查用戶行數是否小於原稿行數
-                this.errors.push('用戶輸入的行數少於原稿行數，請檢查。');
-                this.score = 0; // 如果行數不夠，設置為 0 分
             }
 
             // 更新結果信息
@@ -150,27 +156,33 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
+.containerr {
+    position: relative;
+    width: 95%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 .compare-container {
-    position: absolute;
+    position: relative;
     top: 0;
     left: 0;
+    max-height: 1000px;
     height: 100%;
-    max-height: 500svh;
     width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 0;
-    padding-left: 20px;
-    padding-right: 20px;
-    box-sizing: border-box;
     background-color: #223243;
-    /* color: #00a8d2; */
 }
 
 .result-display {
+    position: relative;
+    top: 0;
     margin-left: 30px;
     margin-bottom: 5px;
     font-size: 18px;
@@ -184,7 +196,7 @@ export default {
 .code-wrapper {
     display: flex;
     margin: 10px 0;
-    
+
 }
 
 .line-numbers {
@@ -216,6 +228,7 @@ export default {
 
 /* From Uiverse.io by PriyanshuGupta28 */
 .pushable {
+    margin-top: 10px;
     position: relative;
     width: 100%;
     background: transparent;
@@ -226,7 +239,6 @@ export default {
     outline-color: deeppink;
     transition: filter 250ms;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-    margin-bottom: 60px;
 }
 
 .shadow {
@@ -264,7 +276,7 @@ export default {
     background: hsl(248, 53%, 58%);
     padding: 16px 32px;
     color: white;
-    width: 100%;
+    width: 95%;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
@@ -344,13 +356,12 @@ export default {
 }
 
 .footer-copyright {
-    position: absolute;
+    position: relative;
     bottom: 0;
-    left: 0;
-    right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
     color: white;
     background-color: black;
     height: 50px;
@@ -362,5 +373,11 @@ export default {
     align-items: center;
     justify-content: space-between;
     margin: 10px;
+}
+
+
+h1 {
+    text-align: center;
+    color: #fff;
 }
 </style>

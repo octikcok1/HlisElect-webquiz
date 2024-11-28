@@ -9,10 +9,10 @@
         <img class="calligraphy 役" src="/役.png" alt="役" />
         <img class="long-word" src="/技術課.png" alt="技術課" />
         <img class="stamp" src="/印.png" alt="印章" />
-        <video autoplay loop muted class="background-video">
+        <!-- <video autoplay loop muted class="background-video">
             <source src="../assets/E.mp4" type="video/mp4" />
             您的瀏覽器不支持視頻標籤。
-        </video>
+        </video> -->
         <figure class="snip1295 po1"><img src="/dog.jpg"
                 alt="sample67" />
             <div class="border one">
@@ -156,12 +156,13 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .app-container {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    background-color: antiquewhite;
 }
 
 .container {
@@ -433,12 +434,13 @@ button:active {
 .snip1295 .border:after,
 .snip1295 .border div:before,
 .snip1295 .border div:after {
-    background-color: #f5b043;
+    background-color: rgb(255, 0, 200);
     position: absolute;
     content: "";
     display: block;
     -webkit-transition: all 0.4s ease-in-out;
     transition: all 0.4s ease-in-out;
+    filter: brightness(100%);
 }
 
 .snip1295 .border:before,
