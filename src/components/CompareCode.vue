@@ -27,10 +27,12 @@
                     <span class="edge"></span>
                     <span class="front"> 提交 </span>
                 </button>
+                
                 <p style="color: white;margin-top: 10px;">© 2024 - {{ Year }} 花蓮高工電子科保留所有權利。 屬名：octikcok</p>
             </div>
         </div>
     </div>
+    <img class="imgg" src="/m01.jpg" alt="示範圖">
 </template>
 
 <script>
@@ -157,6 +159,15 @@ export default {
 </script>
 
 <style scoped>
+.imgg {
+    position: relative; 
+    left: 25svw;
+    width: 50%;
+    height: auto;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
 .containerr {
     position: relative;
     width: 95%;
