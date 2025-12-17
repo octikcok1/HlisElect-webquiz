@@ -28,11 +28,47 @@
                     <span class="front"> 提交 </span>
                 </button>
                 
-                <p style="color: white;margin-top: 10px;">© 2024 - {{ Year }} 花蓮高工電子科保留所有權利。 屬名：octikcok</p>
+                <!-- 新增的表格區域 -->
+                <div class="table-section" style="margin-top: 20px;">
+                    <h2 style="color: #00a8d2;">{{ questionType }} 題腳位練習</h2>
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th>Node Name</th>
+                                <th>Direction</th>
+                                <th>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(node, index) in nodes" :key="index">
+                                <td>{{ node.name }}</td>
+                                <td>{{ node.direction }}</td>
+                                <td>
+                                    <!-- 使用 input + datalist 實現下拉 + 輸入過濾 -->
+                                    <!-- 使用 input + datalist 實現下拉 + 輸入過濾 -->
+                                    <input list="pin-options" v-model="node.location" placeholder="輸入或選擇 PIN" @focus="$event.target.select()" class="dropdown-input">
+                                    <datalist id="pin-options">
+                                        <option v-for="pin in pinOptions" :key="pin" :value="pin"></option>
+                                    </datalist>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <!-- 隱藏的比對結果顯示區 -->
+                    <div v-if="showTableResult" class="table-result-message" v-html="tableResultMessage"></div>
+                    <!-- 表格提交按鈕 -->
+                    <button @click="submitTable" class="pushable" style="margin-top: 10px;">
+                        <span class="shadow"></span>
+                        <span class="edge"></span>
+                        <span class="front"> 提交表格 </span>
+                    </button>
+                </div>
+                
+                <img class="imgg" src="/m01.jpg" alt="示範圖">
+                <p style="color: white;margin-top: 10px;margin-bottom: 30px;">© 2024 - {{ Year }} 花蓮高工電子科保留所有權利。 屬名：octikcok</p>
             </div>
         </div>
     </div>
-    <img class="imgg" src="/m01.jpg" alt="示範圖">
 </template>
 
 <script>
@@ -47,7 +83,18 @@ export default {
             errors: [],
             score: 100,
             Year: new Date().getFullYear(),
+            // 新增表格相關數據
+            nodes: [], // 根據 A/B 題動態載入
+            pinOptions: [], // PIN_0 ~ PIN_45
+            showTableResult: false, // 初始隱藏結果
+            tableResultMessage: '', // 結果訊息
+            currentAnswerSet: [], // 儲存當前題目的正確答案（隱藏）
         };
+    },
+    computed: {
+        questionType() {
+            return this.$route.params.question === 'A' ? 'A' : 'B';
+        },
     },
     methods: {
         async submitCode() {
@@ -145,6 +192,72 @@ export default {
             }
             lineNumbers.textContent = lineNumberText;
         },
+        // 新增方法：初始化 PIN 選項
+        initPinOptions() {
+            this.pinOptions = [];
+            for (let i = 0; i <= 45; i++) {
+                this.pinOptions.push(`PIN_${i}`);
+            }
+        },
+        // 修改方法：載入表格節點根據 A/B 題與分數（題號）
+        async loadNodes() {
+            const questionType = this.$route.params.question || 'A';
+            const questionScore = this.$route.params.score || '1'; // 默認題號 1
+
+            try {
+                const response = await fetch('/data/table_answers.json');
+                if (!response.ok) throw new Error('無法載入答案檔');
+                const allAnswers = await response.json();
+
+                if (allAnswers[questionType] && allAnswers[questionType][questionScore]) {
+                    this.currentAnswerSet = allAnswers[questionType][questionScore];
+                    // 初始化 UI nodes：複製結構但清空 location (答案)
+                    this.nodes = this.currentAnswerSet.map(item => ({
+                        name: item.name,
+                        direction: item.direction,
+                        location: '' // 用戶需填寫的部分，預設為空
+                    }));
+                } else {
+                    this.tableResultMessage = '查無此題號之表格設定';
+                    this.nodes = [];
+                }
+            } catch (error) {
+                console.error('載入表格失敗:', error);
+                this.tableResultMessage = '載入表格失敗，請檢查網路或檔案。';
+            }
+        },
+        // 修改方法：提交表格並比對
+        submitTable() {
+            this.showTableResult = true;
+            let correctCount = 0;
+            let totalCount = this.currentAnswerSet.length;
+            let errorDetails = [];
+
+            this.nodes.forEach((userNode, index) => {
+                const correctNode = this.currentAnswerSet[index];
+                const userLocation = (userNode.location || '').trim().toUpperCase();
+                const correctLocation = (correctNode.answer || '').trim().toUpperCase();
+
+                // 若正確答案為空，則視為不需填寫或任意皆可（依需求定，目前假設需精確比對）
+                // 如果正確答案是空字串，通常代表該腳位不需要設定，若用戶留空算對
+                if (userLocation === correctLocation) {
+                    correctCount++;
+                } else {
+                    errorDetails.push(`腳位 <b>${userNode.name}</b> 錯誤：您填寫 <b>${userLocation || '(空)'}</b>，應為 <b>${correctLocation || '(無)'}</b>`);
+                }
+            });
+
+            const score = Math.round((correctCount / totalCount) * 100);
+            
+            let message = `比對完成！<br>分數：${score} 分<br>`;
+            if (errorDetails.length > 0) {
+                message += `<br>錯誤詳情：<br>${errorDetails.join('<br>')}`;
+            } else {
+                message += `<br>恭喜！全對！`;
+            }
+            
+            this.tableResultMessage = message;
+        },
     },
     mounted() {
         // 使用 Vue 的方法來處理 hover 事件
@@ -154,18 +267,22 @@ export default {
                 this.classList.remove('hover');
             });
         });
+        // 初始化 PIN 選項和表格節點
+        this.initPinOptions();
+        this.loadNodes();
     },
 };
 </script>
 
 <style scoped>
+/* 原有樣式保持不變，以下新增表格相關樣式 */
 .imgg {
     position: relative; 
     left: 25svw;
     width: 50%;
     height: auto;
     margin-top: 30px;
-    margin-bottom: 30px;
+    margin-bottom: 10px;
 }
 
 .containerr {
@@ -181,14 +298,14 @@ export default {
     position: relative;
     top: 0;
     left: 0;
-    max-height: 1000px;
-    height: 100%;
+    min-height: 100vh;
     width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     background-color: #223243;
+    padding-bottom: 20px;
 }
 
 .result-display {
@@ -237,7 +354,64 @@ export default {
     line-height: 1.5;
 }
 
-/* From Uiverse.io by PriyanshuGupta28 */
+/* ... (其他 pushable 等樣式保持不變) */
+
+.result-message {
+    margin-top: 10px;
+    font-weight: bold;
+    color: red;
+}
+
+/* 新增表格樣式 */
+.config-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.config-table th, .config-table td {
+    border: 1px solid #4a5568;
+    padding: 8px;
+    text-align: left;
+    color: #e0e0e0;
+}
+
+.config-table th {
+    background-color: #2c3e50;
+    color: #ffffff;
+}
+
+.config-table input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #555;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #16202a;
+    color: #fff;
+}
+
+/* 確保在 Chrome/Edge 等瀏覽器中顯示下拉箭頭，並設為亮色以可見 */
+.config-table input::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    cursor: pointer;
+    margin-left: -10px;
+    filter: invert(1);
+}
+
+.config-table input:focus {
+    outline: 2px solid #00a8d2;
+    border-color: #00a8d2;
+}
+
+.table-result-message {
+    margin-top: 10px;
+    font-weight: bold;
+    color: red;
+    margin-bottom: 10px;
+}
+
 .pushable {
     margin-top: 10px;
     position: relative;
@@ -279,7 +453,6 @@ export default {
             hsl(248, 39%, 39%) 92%,
             hsl(248, 39%, 29%) 100%);
 }
-
 .front {
     display: block;
     position: relative;
@@ -322,61 +495,6 @@ export default {
 
 .pushable:focus:not(:focus-visible) {
     outline: none;
-}
-
-
-.result-message {
-    margin-top: 10px;
-    font-weight: bold;
-    color: red;
-}
-
-/* WebKit 瀏覽器的捲動條樣式 */
-::-webkit-scrollbar {
-    width: 12px;
-    /* 捲動條的寬度 */
-    height: 12px;
-    /* 水平捲動條的高度 */
-}
-
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    /* 捲動條的背景 */
-    border-radius: 10px;
-    /* 圓角 */
-}
-
-::-webkit-scrollbar-thumb {
-    background: #007a67;
-    /* 捲動條的顏色 */
-    border-radius: 10px;
-    /* 圓角 */
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #005f4f;
-    /* 滑鼠懸停時的顏色 */
-}
-
-/* Firefox 的捲動條樣式 */
-* {
-    scrollbar-width: thin;
-    /* 捲動條的寬度 */
-    scrollbar-color: #007a67 #f1f1f1;
-    /* 滑塊顏色和背景顏色 */
-}
-
-.footer-copyright {
-    position: relative;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    color: white;
-    background-color: black;
-    height: 50px;
-    margin: 0;
 }
 
 .header-container {
